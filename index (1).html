@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ROTINA SHELBY - MODO CASCA GROSSA</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; font-family: 'Arial', sans-serif; }
+        body { background-color: #0d0d13; color: #fff; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        
+        .container { width: 100%; max-width: 420px; background: #161a24; border-radius: 16px; border: 2px solid #00ffcc; padding: 15px; box-shadow: 0 4px 20px rgba(0,255,204,0.1); }
+        
+        h1 { color: #00ffcc; font-size: 1.6rem; text-align: center; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; font-weight: 900; text-shadow: 0 0 10px rgba(0,255,204,0.3); }
+        .subtitle { color: #ff3333; font-size: 0.75rem; font-weight: bold; text-align: center; margin-bottom: 15px; letter-spacing: 1px; }
+        
+        /* PLACAR DE RECOMPENSAS */
+        .status-board { background: #1f2833; border-radius: 12px; padding: 12px; display: flex; justify-content: space-around; align-items: center; margin-bottom: 15px; border: 1px solid #333; }
+        .status-item { text-align: center; }
+        .status-label { font-size: 0.7rem; color: #aaa; text-transform: uppercase; }
+        .status-val { font-size: 1.4rem; font-weight: bold; color: #ffff00; margin-top: 2px; }
+
+        /* LISTA DE TAREFAS */
+        .task-list { display: flex; flex-direction: column; gap: 10px; max-height: 58vh; overflow-y: auto; padding-right: 5px; }
+        
+        .task-list::-webkit-scrollbar { width: 4px; }
+        .task-list::-webkit-scrollbar-track { background: #11141c; }
+        .task-list::-webkit-scrollbar-thumb { background: #00ffcc; border-radius: 4px; }
+
+        .task-item { background: #11141c; border-left: 5px solid #667eea; border-radius: 4px 8px 8px 4px; padding: 12px; display: flex; justify-content: space-between; align-items: center; }
+        
+        .task-item.completed { border-left-color: #00ffcc; background: rgba(0, 255, 204, 0.03); opacity: 0.6; }
+        .task-item.failed { border-left-color: #ff3333; background: rgba(255, 51, 51, 0.05); opacity: 0.7; }
+        
+        .task-info { text-align: left; max-width: 60%; }
+        .task-title { font-weight: bold; font-size: 0.95rem; color: #fff; }
+        .task-item.completed .task-title { text-decoration: line-through; color: #888; }
+        .task-item.failed .task-title { color: #ff5555; }
+        .task-time { font-size: 0.75rem; color: #00ffcc; margin-top: 3px; font-weight: bold; }
+        
+        /* BOTÕES ACTION */
+        .actions-wrap { display: flex; flex-direction: column; gap: 6px; }
+        .task-btn { background: linear-gradient(135deg, #00ffcc 0%, #00bc9f 100%); color: #000; border: none; padding: 6px 12px; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 0.75rem; text-transform: uppercase; }
+        .btn-fail { background: linear-gradient(135deg, #ff3333 0%, #aa0000 100%); color: #fff; }
+        
+        .task-btn.done { background: #222; color: #666; cursor: default; background-image: none; text-align: center; width: 80px; padding: 10px 0; }
+        .task-btn.failed-status { background: #3a1111; color: #ff5555; cursor: default; background-image: none; text-align: center; width: 80px; padding: 10px 0; border: 1px solid #ff3333; }
+
+        /* POPUPS INTERNOS */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.92); z-index: 999; justify-content: center; align-items: center; padding: 20px; }
+        .modal-box { background: #1f2833; border: 3px solid #ff3333; border-radius: 16px; padding: 25px; text-align: center; max-width: 360px; width: 100%; box-shadow: 0 0 30px rgba(255,51,51,0.4); }
+        .modal-box.success-style { border-color: #ffcc00; box-shadow: 0 0 30px rgba(255,204,0,0.3); background: #131922; }
+        .modal-box.defeat-style { border-color: #667eea; box-shadow: 0 0 30px rgba(102,126,234,0.3); background: #11141c; }
+        
+        .modal-box h2 { text-transform: uppercase; font-size: 1.5rem; margin-bottom: 12px; font-weight: 900; }
+        .modal-box.success-style h2 { color: #ffcc00; letter-spacing: 1px; }
+        .modal-box.defeat-style h2 { color: #667eea; letter-spacing: 1px; }
+        .modal-text { font-size: 1.05rem; margin-bottom: 20px; color: #fff; line-height: 1.5; text-align: justify; }
+        .modal-btn { color: #fff; border: none; padding: 12px 25px; font-weight: bold; border-radius: 8px; text-transform: uppercase; cursor: pointer; width: 100%; font-size: 0.85rem; }
+        
+        .btn-red { background: #ff3333; }
+        .btn-gold { background: linear-gradient(135deg, #ffcc00 0%, #b38f00 100%); color: #000; }
+        .btn-blue { background: linear-gradient(135deg, #667eea 0%, #4c51bf 100%); color: #fff; }
+
+        .reset-btn { width: 100%; background: #ff0055; color: #fff; border: none; padding: 12px; font-weight: bold; border-radius: 8px; margin-top: 15px; cursor: pointer; text-transform: uppercase; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>ROTINA SHELBY</h1>
+        <div class="subtitle">⚠️ MODO DISCIPLINA DE AÇO ⚠️</div>
+        
+        <div class="status-board">
+            <div class="status-item">
+                <div class="status-label">🪙 Carteira</div>
+                <div class="status-val" id="user-coins">0</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">🔥 Concluídas</div>
+                <div class="status-val" id="user-progress">0/13</div>
+            </div>
+        </div>
+
+        <div class="task-list" id="list-container">
+            </div>
+
+        <button class="reset-btn" onclick="Routine.checkDayEnd()">Zerar e Reiniciar Dia 🔃</button>
+    </div>
+
+    <div class="modal-overlay" id="appModal">
+        <div class="modal-box" id="modalBox">
+            <h2 id="modalTitle">AVISO</h2>
+            <div class="modal-text" id="modalMessage">Mensagem do sistema.</div>
+            <button class="modal-btn" id="modalBtn" onclick="Routine.closeModalAndReset()">Fechar</button>
+        </div>
+    </div>
+
+    <script>
+        const MyTasks = [
+            { id: 0, title: "Acordar", time: "06:30", reward: 10, punish: "Pague 15 Flexões imediatamente para acordar o corpo!" },
+            { id: 1, title: "Tomar Banho (Manhã)", time: "07:00", reward: 15, punish: "Faça 20 Abdominais por quebrar a higiene!" },
+            { id: 2, title: "Café da Manhã", time: "07:30", reward: 10, punish: "Fique 40 segundos em Prancha Isométrica!" },
+            { id: 3, title: "Estudar (Bloco 1)", time: "08:00 às 10:00", reward: 30, punish: "Pague 25 Flexões por vacilar nos estudos da manhã!" },
+            { id: 4, title: "Tempo Livre", time: "11:00", reward: 10, punish: "Faça 15 Polichinelos rápidos!" },
+            { id: 5, title: "Tempo Livre", time: "12:00", reward: 10, punish: "Faça 15 Polichinelos rápidos!" },
+            { id: 6, title: "Tempo Livre", time: "13:00", reward: 10, punish: "Faça 15 Polichinelos rápidos!" },
+            { id: 7, title: "Estudar (Bloco 2)", time: "14:00 às 16:00", reward: 30, punish: "Pague 25 Flexões por perder o foco da tarde!" },
+            { id: 8, title: "Exercício Físico", time: "17:00", reward: 25, punish: "Castigo Duplo: Pague 30 Agachamentos completos!" },
+            { id: 9, title: "Tomar Banho (Noite)", time: "18:00", reward: 15, punish: "Faça 20 Abdominais de punição!" },
+            { id: 10, title: "Escola / Aulas", time: "19:00 às 22:30", reward: 50, punish: "Castigo de Elite: Pague 35 Flexões por matar a aula!" },
+            { id: 11, title: "Chegar em Casa", time: "23:20", reward: 10, punish: "Faça 30 segundos de corrida parada no lugar!" },
+            { id: 12, title: "Dormir / Descanso", time: "00:30", reward: 10, punish: "Vá dormir agora sem enrolar!" }
+        ];
+
+        const ShelbyQuotes = [
+            "“Ô, meu filho, papai tá cheio de orgulho de você, viu? Só orgulho de você mesmo. Você acordou cedo, correu atrás, estudou e cumpriu tudo o que planejou do começo ao fim. É exatamente assim que se constrói um futuro gigante. Continua firme nesse caminho, porque você vai longe!”",
+            "“Henrique, os homens calmos e disciplinados são os que realmente comandam o mundo. Hoje você venceu o caos lá fora porque primeiro conquistou a si mesmo por dentro. Descanse com a mente fria. O amanhã pertence aos que mantêm a palavra.”",
+            "“Inteligência sem disciplina é apenas potencial desperdiçado, Henrique. O plano só funciona se você for implacável com os seus horários. Você executou cada movimento hoje como um líder estratégico. Mantenha os olhos abertos e a postura firme.”",
+            "“Você não precisa de sorte quando tem um método impiedoso. Hoje você provou que a consistência corta mais profundo do que qualquer navalha. Deixe que os outros ajam por impulso; nós operamos com precisão profissional. Excelente trabalho.”"
+        ];
+
+        // Mensagens caso o dia NÃO seja perfeito
+        const DefeatQuotes = [
+            "“Henrique, hoje nós perdemos terreno porque você não completou todas as tarefas. Um passo em falso é o suficiente para desalinhar a estratégia. Mas não desanime. Erros servem para calibrar a mira. Você terá mais uma oportunidade amanhã para agir como um verdadeiro Shelby. Durma, recalcule e volte implacável.”",
+            "“O plano falhou hoje, Henrique. Algumas missões ficaram para trás e o preço foi cobrado. Mas escute bem: um líder não se destrói com uma derrota, ele aprende com ela. Amanhã a estrada estará limpa de novo. Não aceite menos do que a vitória perfeita no próximo amanhecer.”"
+        ];
+
+        let shouldResetAfterModal = false;
+
+        const Routine = {
+            coins: 0,
+            completedIds: [],
+            failedIds: [],
+
+            init() {
+                this.loadData();
+                this.render();
+            },
+
+            loadData() {
+                let savedCoins = localStorage.getItem('shelby_punish_coins_v7');
+                let savedTasks = localStorage.getItem('shelby_punish_completed_v7');
+                let savedFails = localStorage.getItem('shelby_punish_failed_v7');
+                
+                if (savedCoins) this.coins = parseInt(savedCoins);
+                if (savedTasks) this.completedIds = JSON.parse(savedTasks);
+                if (savedFails) this.failedIds = JSON.parse(savedFails);
+            },
+
+            saveData() {
+                localStorage.setItem('shelby_punish_coins_v7', this.coins);
+                localStorage.setItem('shelby_punish_completed_v7', JSON.stringify(this.completedIds));
+                localStorage.setItem('shelby_punish_failed_v7', JSON.stringify(this.failedIds));
+            },
+
+            completeTask(id, reward) {
+                if (this.completedIds.includes(id) || this.failedIds.includes(id)) return;
+                this.completedIds.push(id);
+                this.coins += reward;
+                this.saveData();
+                this.render();
+
+                if (this.completedIds.length === MyTasks.length) {
+                    this.triggerPerfectDay();
+                }
+            },
+
+            failTask(id, punishText) {
+                if (this.completedIds.includes(id) || this.failedIds.includes(id)) return;
+                this.failedIds.push(id);
+                this.coins = Math.max(0, this.coins - 30); 
+                this.saveData();
+                this.render();
+
+                this.openPunishModal(punishText);
+            },
+
+            openPunishModal(text) {
+                shouldResetAfterModal = false;
+                const box = document.getElementById('modalBox');
+                box.className = "modal-box";
+                document.getElementById('modalTitle').innerText = "MISSÃO FRACASSADA!";
+                document.getElementById('modalTitle').style.color = "#ff3333";
+                document.getElementById('modalMessage').innerHTML = `Você pulou essa tarefa!<br><br><strong>ORDEM DOS PEAKY BLINDERS:</strong><br>${text}<br><br><span style='color:#ff5555; font-size:0.9rem; font-weight:bold;'>(MULTA APLICADA: -30 MOEDAS)</span>`;
+                
+                const btn = document.getElementById('modalBtn');
+                btn.className = "modal-btn btn-red";
+                btn.innerText = "Vou pagar o castigo agora ⚔️";
+                
+                document.getElementById('appModal').style.display = 'flex';
+            },
+
+            triggerPerfectDay() {
+                shouldResetAfterModal = false;
+                const randomIndex = Math.floor(Math.random() * ShelbyQuotes.length);
+                const quote = ShelbyQuotes[randomIndex];
+
+                const box = document.getElementById('modalBox');
+                box.className = "modal-box success-style";
+                
+                document.getElementById('modalTitle').innerText = "VITÓRIA ABSOLUTA";
+                document.getElementById('modalMessage').innerHTML = `${quote}<br><br><span style='color:#ffcc00; font-size:0.85rem; font-weight:bold;'>🏆 DIA PERFEITO CONCLUÍDO COM SUCESSO!</span>`;
+                
+                const btn = document.getElementById('modalBtn');
+                btn.className = "modal-btn btn-gold";
+                btn.innerText = "Absorver e manter o foco 🕶️";
+                
+                document.getElementById('appModal').style.display = 'flex';
+            },
+
+            // Ativa quando clica em Reiniciar Dia
+            checkDayEnd() {
+                if (!confirm("Deseja fechar o relatório de hoje e reiniciar os painéis para o próximo dia?")) return;
+
+                // Se completou as 13 tarefas perfeitamente
+                if (this.completedIds.length === MyTasks.length) {
+                    this.triggerPerfectDay();
+                    shouldResetAfterModal = true;
+                } else {
+                    // Se falhou ou deixou passar alguma tarefa
+                    const randomIndex = Math.floor(Math.random() * DefeatQuotes.length);
+                    const quote = DefeatQuotes[randomIndex];
+
+                    const box = document.getElementById('modalBox');
+                    box.className = "modal-box defeat-style";
+                    
+                    document.getElementById('modalTitle').innerText = "ANÁLISE DE ESTRATÉGIA";
+                    document.getElementById('modalMessage').innerHTML = `${quote}<br><br><span style='color:#667eea; font-size:0.85rem; font-weight:bold;'>⚠️ O DIA TERMINOU COM PENDÊNCIAS.</span>`;
+                    
+                    const btn = document.getElementById('modalBtn');
+                    btn.className = "modal-btn btn-blue";
+                    btn.innerText = "Preparar para o contra-ataque amanhã 🦾";
+                    
+                    document.getElementById('appModal').style.display = 'flex';
+                    shouldResetAfterModal = true;
+                }
+            },
+
+            closeModalAndReset() {
+                document.getElementById('appModal').style.display = 'none';
+                if (shouldResetAfterModal) {
+                    this.completedIds = [];
+                    this.failedIds = [];
+                    this.saveData();
+                    this.render();
+                    shouldResetAfterModal = false;
+                }
+            },
+
+            render() {
+                document.getElementById('user-coins').innerText = this.coins;
+                document.getElementById('user-progress').innerText = `${this.completedIds.length}/${MyTasks.length}`;
+                
+                let html = "";
+                MyTasks.forEach(task => {
+                    let isDone = this.completedIds.includes(task.id);
+                    let isFailed = this.failedIds.includes(task.id);
+                    let currentClass = "";
+                    
+                    if (isDone) currentClass = "completed";
+                    if (isFailed) currentClass = "failed";
+                    
+                    html += `
+                        <div class="task-item ${currentClass}">
+                            <div class="task-info">
+                                <div class="task-title">${task.title}</div>
+                                <div class="task-time">⏰ ${task.time}</div>
+                                <div style="font-size: 0.72rem; color: #ffff00; margin-top: 3px;">Ganho: +🪙${task.reward} | Falha: ❌ -30 Moedas</div>
+                            </div>
+                            <div class="actions-wrap">
+                                ${isDone ? '<button class="task-btn done">✔ FEITO</button>' : 
+                                  isFailed ? '<button class="task-btn failed-status">❌ FALHOU</button>' : `
+                                    <button class="task-btn" onclick="Routine.completeTask(${task.id}, ${task.reward})">Feito</button>
+                                    <button class="task-btn btn-fail" onclick="Routine.failTask(${task.id}, '${task.punish}')">Não Fiz ❌</button>
+                                `}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                document.getElementById('list-container').innerHTML = html;
+            }
+        };
+
+        window.onload = () => Routine.init();
+    </script>
+</body>
+</html>
